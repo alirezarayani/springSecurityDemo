@@ -112,6 +112,73 @@ If user is valid, the authentication filter will pass that the authentication ob
    “datasource”, most likely a database using the loadUserByUsername(String username) methods which takes in the
    username as a parameter. It then returns a UserDetails object populated with the user data fetched from the
    datasource ( database )
-   . The three main fields of an UserDetails object are username, password and the roles/authorities.
+    - The three main fields of an UserDetails object are username, password and the roles/authorities.
 
 ----
+> **Changing the default security configurations**
+
+### Steps:
+
+1. Create Configuration class and extend `WebSecurityConfigurerAdapter` class.
+
+```java
+
+@Configuration
+public class ProjectSecurityConfig extends WebSecurityConfigurerAdapter {
+   ...
+}
+```
+
+2. Override configure method
+
+```java 
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+    }
+```
+
+3. Add custom configuration
+
+- Default configurations which will secure all the requests
+
+ ```java
+http.authorizeRequests()
+        .anyRequest().authenticated()
+        .and()
+        .formLogin().and()
+        .httpBasic();
+``` 
+
+- Custom configurations as per our requirement
+
+```java
+http.authorizeRequests()
+        .antMatchers("/myAccount").authenticated()
+        .antMatchers("/myBalance").authenticated()
+        .antMatchers("/myLoans").authenticated()
+        .antMatchers("/myCards").authenticated()
+        .antMatchers("/notices").permitAll()
+        .antMatchers("/contact").permitAll()
+        .and().formLogin()
+        .and().httpBasic();
+```
+
+- Configuration to deny all the requests
+
+```java
+http.authorizeRequests()
+        .anyRequest().denyAll()
+        .and().formLogin()
+        .and().httpBasic();
+```
+
+- Configuration to permit all the requests
+
+```java
+http.authorizeRequests()
+        .anyRequest().permitAll()
+        .and().formLogin()
+        .and().httpBasic();
+```
+
+---
