@@ -403,63 +403,68 @@ public class Customer {
 3. Create Customer repository
 
 ```java
+
 @Repository
 public interface CustomerRepository extends CrudRepository<Customer, Long> {
-   Optional<Customer> findByEmail(String email);
+    Optional<Customer> findByEmail(String email);
 }
 ```
+
 4. Create SecurityCustomer
+
 ```java
 public class SecurityCustomer implements UserDetails {
 
-   private final Customer customer;
+    private final Customer customer;
 
-   public SecurityCustomer(Customer customer) {
-      this.customer = customer;
-   }
+    public SecurityCustomer(Customer customer) {
+        this.customer = customer;
+    }
 
-   @Override
-   public Collection<? extends GrantedAuthority> getAuthorities() {
-      List<GrantedAuthority> authorities = new ArrayList<>();
-      authorities.add(new SimpleGrantedAuthority(customer.getRole()));
-      return authorities;
-   }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(customer.getRole()));
+        return authorities;
+    }
 
-   @Override
-   public String getPassword() {
-      return customer.getPwd();
-   }
+    @Override
+    public String getPassword() {
+        return customer.getPwd();
+    }
 
-   @Override
-   public String getUsername() {
-      return customer.getEmail();
-   }
+    @Override
+    public String getUsername() {
+        return customer.getEmail();
+    }
 
-   @Override
-   public boolean isAccountNonExpired() {
-      return true;
-   }
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
-   @Override
-   public boolean isAccountNonLocked() {
-      return true;
-   }
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
-   @Override
-   public boolean isCredentialsNonExpired() {
-      return true;
-   }
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
-   @Override
-   public boolean isEnabled() {
-      return true;
-   }
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }
 ```
+
 5. Create CustomUserDetailsService
+
 ```java
 public class CustomUserDetailsService implements UserDetailsService {
-    
+
     @Autowired
     private CustomerRepository customerRepository;
 
@@ -473,7 +478,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 }
 ```
+
 ```java
+
 @SpringBootApplication
 @ComponentScan("com.example")
 @EnableJpaRepositories("com.example.repository")
@@ -483,5 +490,166 @@ public class SpringSecurityDemoApplication {
         SpringApplication.run(SpringSecurityDemoApplication.class, args);
     }
 }
-
 ```
+
+---
+> **Password Management With Password Encoder**
+
+![Passwod](src/main/resources/assests/images/3-password-managment-with-password-encoder.png)
+
+When you insert password in plain text (without any encryption, encoding , hashing), everyone can access to table can
+see all the password.
+
+The other issue, you are sending passwords in plain text on the network.
+
+> **ENCODING**
+
+- Encoding is defined as the process of converting data from one form to another form and has nothing to do with
+  cryptography.It guarantees none of the 3 cryptographic properties of confidentiality, integrity, and authenticity
+  because it involves no secret and in completely reversible.
+
+
+- Encoding can be used for reducing the size of audio and video files.Each audio and video file format has a
+  corresponding coder-decoder(codec) program that is user to code it into the appropriate format and then decodes for
+  playback.
+
+
+- It can't be used for security data, various publicly available algorithms are used for encoding.
+
+<center>Example: ASCII, BASE64, UNICODE</center>
+
+> **ENCRYPTION**
+
+- Encryption is defined as the process of transforming data in such a way that guarantees confidentiality.to achieve
+  that, encryption requires the use of a secret which, in cryptographic terms, we call a "key".
+
+
+- Encryption is divided into two categories, where the major difference is the number of keys needed.
+
+    - symmetric
+    - asymmetric
+
+- In symmetric encryption algorithms, a single secret (key) is used to both encrypt and decrypt data. Only those who are
+  authorized to access the data should have the single shared key in their possession.
+
+<center>Example:File system encryption, database encryption</center>
+
+- On the other hand, in asymmetric encryption algorithms, there are two keys in use: one public and one private.As their
+  names suggest, the private key must be kept secret, whereas the public can be known to everyone.When applying
+  encryption, the public key is used, whereas decryption requires the private key. Anyone should be able to send us
+  encrypted data, but only we should be able to decrypt and read it!
+
+ <center>Example: TLS, VPN, SSH</center>
+
+Encryption not suitable for password management because everyone accesses to public key (symmetric) or private key (
+asymmetric) can see the password.
+
+> **HASHING**
+
+• In hashing, data is converted to the hash using some hashing function, which can be any number generated from string
+or text.Various hashing algorithms are MD5, SHA256. Data once hashed non-reversible.
+
+• One cannot determine the original data given only the output of a hashing algorithms.
+
+• Given some arbitrary data along with the output of a hashing algorithm, one can verify whether this data matches the
+original input data without needing to see the original data
+
+• You may have heard of hashing used in the context of passwords. Among many uses of hashing algorithms, this is one of
+the most well-known. When you sign up on a web app using a password, rather than storing your actual password, which
+would not only be a violation of your privacy but also a big risk for the web app owner, the web app hashes the password
+and stores only the hash.
+
+• Then, the next time you log in, the web app again hashes your password and compares this hash with the hash stored
+earlier. If the hashes match, the web app can be confident that you know your password even though the web app doesn’t
+have your actual password in storage.
+
+<center>Example: Password management, verify the integrity of the downloaded file</center>
+
+![Password_Hasshing](src/main/resources/assests/images/4-Password-Hashing.png)
+
+> **Definition Of The Password Encoder**
+
+```java
+public interface PasswordEncoder {
+
+    String encode(CharSequence rawPassword);
+
+    boolean matches(CharSequence rawPassword, String encodedPassword);
+
+    //That means you will be doing that encoding, encryption or hashing two times.
+    default boolean upgradeEncoding(String encodedPassword) {
+        return false;
+    }
+}
+```
+
+> **Different Implementations of PasswordEncoders provided by Spring Security**
+
+- NoOpPasswordEncoder
+- StandardPasswordEncoder
+- Pbkdf2PasswordEncoder
+- BCryptPasswordEncoder
+- SCryptPasswordEncoder
+
+1- NoOpPasswordEncoder
+
+```java
+   @Bean
+public PasswordEncoder passwordEncoder(){
+        return NoOpPasswordEncoder.getInstance();
+        }
+```
+
+2- StandardPasswordEncoder
+
+```java
+  @Bean
+public PasswordEncoder passwordEncoder(){
+        return new StandardPasswordEncoder();
+        }
+```
+
+This use SHA-256 and can add salt to it;.
+
+> **Pbkdf2PasswordEncoder**
+
+- Password-Based Key Derivation Function 2 (PBKDF2) is a pretty easy slow-hashing function that performs an HMAC
+  (Hashed Message Authentication Code) as many times as specified by an iterations' argument.
+
+- The three parameters received by the last call are the value of a key used for the encoding process, the number of
+  iterations used to encode the password, and the size of the hash. The second and third parameters can influence the
+  strength of the result.
+
+
+- You can choose more or fewer iterations as well as the length of the result. The longer the hash, the more powerful
+  the password is.
+
+```java
+        PasswordEncoder p=newPbkdf2PasswordEncoder();
+        PasswordEncoder p=newPbkdf2PasswordEncoder("secret");
+        PasswordEncoder p=newPbkdf2PasswordEncoder("secret",185000,256);
+```
+
+> **Bcrypt & Scrypt PasswordEncoder**
+
+- BCryptPasswordEncoder uses a BCrypt strong hashing function to encode the password. You could instantiate the
+  BCryptPasswordEncoder by calling the no-arguments constructor. But you also have the option to specify a strength
+  coefficient representing the log rounds used in the encoding process. Moreover, you can as well alter the SecureRandom
+  instance used for encoding.
+
+```java
+PasswordEncoder p=newBCryptPasswordEncoder();
+        PasswordEncoder p=newBCryptPasswordEncoder(4);
+        SecureRandom s=SecureRandom.getInstanceStrong();
+        PasswordEncoder p=newBCryptPasswordEncoder(4,s);
+```
+
+- CryptPasswordEncoder uses a SCrypt hashing function to encode the password. For the SCryptPasswordEncoder, you have
+  two options create instances:
+
+```java
+PasswordEncoder p=n ewSCryptPasswordEncoder();
+        PasswordEncoder p=newSCryptPasswordEncoder(16384,8,1,32,64);
+```
+
+----
