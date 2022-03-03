@@ -653,3 +653,86 @@ PasswordEncoder p=n ewSCryptPasswordEncoder();
 ```
 
 ----
+> **Authentication Provider**
+
+If we don't want to use the default way of authentication? Like we don't want to use userDetailService,
+UserDetailManager or PasswordEncoder. I just want to write my own logic based upon my application requirement.
+
+In such scenarios, we have an optional of customizing the Authentication provider.
+
+In the spring security architecture, as soon as a request has been coming from the user, filter will intercept that
+request and will convert it into authentication object and that will be given to the authentication manager
+implementation. authentication manager will given to the authentication provider for validation.
+
+![Authentication providerَََ](src/main/resources/assests/images/5-authentication-providerr.png)
+
+The AuthenticationProvider in Spring Security takes care of the authentication logic. The default implementation of the
+AuthenticationProvider delegates the responsibility of finding the user in the system to a UserDetailsService and
+PasswordEncoder for password validation. But if we have a custom authentication requirement that is not fulfilled by
+Spring Security framework then we can build our own authentication logic by implementing the AuthenticationProvider
+interface.
+
+I want to my own authentication logic inside my authentication provider by implementing it.
+
+Authentication manager will call authentication provider to perform the authentication of the user.
+
+```java
+public interface AuthenticationProvider {
+    Authentication authenticate(Authentication authentication)
+            throws AuthenticationException;
+
+    boolean supports(Class<?> authentication);
+}
+```
+
+- The authenticate() method receives an Authentication object as a parameter and returns an Authentication object as
+  well. We implement the authenticate() method to define the authentication logic.
+
+Authentication manager call authenticate method inside this provider
+
+- The second method in the AuthenticationProvider interface is supports(Class<?> authentication). You’ll implement this
+  method to return true if the current AuthenticationProvider supports the type provided as the Authentication object.
+
+#### `ProviderManager` is implementation of AuthenticationManager.
+
+#### `DaoAuthenticationProvider` is implementation of AuthenticationProviders interface
+
+> **Authentication & Principal**
+
+![Authentication principal](src/main/resources/assests/images/6-authentication-Principal.png)
+
+```java
+@Component
+public class CustomUsernamePwdAuthenticationProvider implements AuthenticationProvider {
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public Authentication authenticate(Authentication authentication){
+        String username = authentication.getName();
+        String password = authentication.getCredentials().toString();
+        Optional<Customer> customer = customerRepository.findByEmail(username);
+        if (customer.isPresent()){
+            if (passwordEncoder.matches(password, customer.get().getPwd())) {
+                List<GrantedAuthority> authorities = new ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority(customer.get().getRole()));
+                return new UsernamePasswordAuthenticationToken(username, password, authorities);
+            }else {
+                throw new BadCredentialsException("Invalid Password");
+            }
+        }else {
+            throw new UsernameNotFoundException("User not exists");
+        }
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.equals(UsernamePasswordAuthenticationToken.class);
+    }
+
+}
+```
