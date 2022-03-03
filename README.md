@@ -702,6 +702,7 @@ Authentication manager call authenticate method inside this provider
 ![Authentication principal](src/main/resources/assests/images/6-authentication-Principal.png)
 
 ```java
+
 @Component
 public class CustomUsernamePwdAuthenticationProvider implements AuthenticationProvider {
 
@@ -712,19 +713,19 @@ public class CustomUsernamePwdAuthenticationProvider implements AuthenticationPr
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public Authentication authenticate(Authentication authentication){
+    public Authentication authenticate(Authentication authentication) {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
         Optional<Customer> customer = customerRepository.findByEmail(username);
-        if (customer.isPresent()){
+        if (customer.isPresent()) {
             if (passwordEncoder.matches(password, customer.get().getPwd())) {
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 authorities.add(new SimpleGrantedAuthority(customer.get().getRole()));
                 return new UsernamePasswordAuthenticationToken(username, password, authorities);
-            }else {
+            } else {
                 throw new BadCredentialsException("Invalid Password");
             }
-        }else {
+        } else {
             throw new UsernameNotFoundException("User not exists");
         }
     }
@@ -736,3 +737,154 @@ public class CustomUsernamePwdAuthenticationProvider implements AuthenticationPr
 
 }
 ```
+
+---
+> **CROSS-ORIGIN RESOURCE SHARING (CORS)**
+
+1. CORS is protocol that enables scripts running on a browser client to interact with resources from a different origin.
+
+2. For example, if a UI app wishes to make an API call running on a different domain, it would be blocked from doing so
+   by default due to CORS.So CORS is not a security issue/attack but default protection provided by browsers to stop
+   sharing the data/communication between different origins.
+
+3. "Other origins" means the URL being accessed differs from the location that javaScript is running from,by having:
+
+    - a different scheme(HTTP or HTTPS)
+    - a different domain
+    - a different port
+
+![CORS-1](src/main/resources/assests/images/7-cors.png)
+
+4. But what if there is a legitimate scenario where cross-origin access is desirable or even necessary. For example,
+   where the UI and backend are hosted on two different ports.
+
+
+5. When a server has been configured correctly to allow cross-origin resource sharing, some special headers will be
+   included. Their presence can be used to determine that a request supports CORS. Web browsers can use these headers to
+   determine whether a request should continue or fail
+
+6. First the browser sends a pre-flight request to the backend server to determine whether it supports CORS or not. The
+   server can then respond to the pre-flight request with a collection of headers:
+
+- Access-Control-Allow-Origin: Defines which origins may have access to the resource. A ‘*' represents any origin
+
+
+- Access-Control-Allow-Methods: Indicates the allowed HTTP methods for cross-origin requests
+
+
+- Access-Control-Allow-Headers: Indicates the allowed request headers for cross-origin requests
+
+
+- Access-Control-Allow-Credentials : Indicates whether or not the response to the request can be exposed when the
+  credentials flag is true.
+
+
+- Access-Control-Max-Age: Defines the expiration time of the result of the cached preflight request
+
+![CORS](src/main/resources/assests/images/8-cors.png)
+
+- You can disable CORS for test environment
+
+```java
+    http
+        .cors().disable()
+```
+
+- Configuration
+
+```java
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(){
+            CorsConfiguration config=new CorsConfiguration();
+            config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+            config.setAllowedMethods(Collections.singletonList("*"));
+            config.setAllowCredentials(true);
+            config.setAllowedHeaders(Collections.singletonList("*"));
+            config.setMaxAge(3600L);
+            UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource();
+            source.registerCorsConfiguration("/**",config);
+            return source;
+            }
+```
+
+or
+
+```java
+   http.cors().configurationSource(new CorsConfigurationSource(){
+@Override
+public CorsConfiguration getCorsConfiguration(HttpServletRequest request){
+        CorsConfiguration config=new CorsConfiguration();
+        config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+        config.setAllowedMethods(Collections.singletonList("*"));
+        config.setAllowCredentials(true);
+        config.setAllowedHeaders(Collections.singletonList("*"));
+        config.setMaxAge(3600L);
+        return config;
+        }
+        }) 
+```
+
+> **CROSS-SITE REQUEST FORGERY (CSRF)**
+
+1. typical Cross-Site Request Forgery (CSRF or XSRF) attack aims to perform an operation in a web application on behalf
+   of a user without their explicit consent. In general, it doesn't directly steal the user's identity, but it exploits
+   the user to carry out an action without their will.
+
+
+2. Consider a website netflix.com and the attacker’s website test.com. Also assume that the victim is logged in and his
+   session is being maintained by cookies. The attacker will:
+
+    - Place HTML codes on his website test.com that will imitate a legal request to netflix.com (for example, a form
+      with method as post and a hidden input field that contains the new password).
+
+    - Make sure that the form is submitted by either using “autosubmit” or luring the victim to click on a submit button
+
+![CSRF](src/main/resources/assests/images/9-csrf.png)
+
+- When the victim visits test.com and that form is submitted, the victim’s browser makes a request to netflix.com for a
+  password change. Also the browser appends the cookies with the request. The server treats it as a genuine request and
+  resets the victim’s password to the attacker’s supplied value. This way the victim’s account gets taken over by the
+  attacker
+
+
+- There are many proposed ways to implement CSRF protection on server side, among which the use of CSRF tokens is most
+  popular. A CSRF token is a string that is tied to a user’s session but is not submitted automatically. A website
+  proceeds only when it receives a valid CSRF token along with the cookies, since there is no way for an attacker to
+  know a user specific token, the attacker can not perform actions on user’s behalf.
+
+#### Disable csrf:
+
+- You can disable CSRF for test environment
+
+```java
+    http
+        .csrf().disable()
+```
+
+```java
+.csrf()
+        .csrfTokenRepository(CookieCsrfTokenRepository
+        .withHttpOnlyFalse()).
+```
+
+```java
+.csrf()
+        .ignoringAntMatchers("/contact")
+        .csrfTokenRepository(CookieCsrfTokenRepository
+        .withHttpOnlyFalse()).
+```
+
+If you want to test with postman
+
+1- first enable interceptor in postman
+
+2- get value from cookie tab (`XSRF_TOKEN`)
+
+3- Add value to Header tab `X-XSRF-token`.
+
+![CSRF](src/main/resources/assests/images/10-csrf.png)
+
+## When to use CSRF protection
+
+Our recommendation is to use CSRF protection for any request that could be processed by a browser by normal users.If you
+are only creating a service that is used by non-browser clients, you will likely want to disable CSRF protection.
