@@ -889,3 +889,189 @@ If you want to test with postman
 Our recommendation is to use CSRF protection for any request that could be processed by a browser by normal users.If you
 are only creating a service that is used by non-browser clients, you will likely want to disable CSRF protection.
 ---
+> **Authentication And Authorization**
+
+![Authentication_And_Authorization](src/main/resources/assests/images/11-Authentication.png)
+
+![Authentication_Filter](src/main/resources/assests/images/12-authentication-filter.png)
+
+When the Client makes a request with the credentials, the authentication filter will intercept the request and validate
+if the person is valid and is he/she the same person whom they are claiming. Post authentication the filter stores the
+UserDetails in the SecurityContext. The UserDetails will have his username, authorities etc. Now the authorization
+filter will intercept and decide whether the person has access to the given path based on this authorities stored in the
+SecurityContext. If authorized the request will be forwarded to the applicable controllers.
+
+Inside UserDetails which is a contract of the User inside the Spring Security, the authorities will be stored in the
+form of Collection of GrantedAuthority. These authorities can be fetched using the method getAuthorities()
+
+```java
+public interface UserDetails {
+    Collections<? extends GrantedAuthority> getAuthorities();
+}
+```
+
+Inside GrantedAuthority interface we have a getAuthority() method which will return the authority/role name in the form
+of a string. Using this value the framework will try to validate the authorities of the user with the implementation of
+the application.
+
+```java
+public interface GrantedAuthority {
+    String getAuthority();
+}
+```
+
+> **Configuration Authorities**
+
+In Spring Security the authorities of the user can be configured and validated using the following ways,
+
+- hasAuthority() :
+  Accepts a single authority for which the endpoint will be configured and user will be validated against the single
+  authority mentioned. Only users having the same authority configured can call the endpoint
+
+
+- hasAnyAuthority() :
+  Accepts multiple authorities for which the endpoint will be configured and user will be validated against the
+  authorities mentioned. Only users having any of the authority configured can call the endpoint.
+
+
+- access() :
+  Using Spring Expression Language (SpEL) it provides you unlimited possibilities for configuring authorities which are
+  not possible with the above methods. We can use operators like OR, AND inside access() method
+
+SimpleGrantedAuthority is one of implementation of GrantedAuthority.
+
+```java
+import org.springframework.security.core.GrantedAuthority;
+
+public final class SimpleGrantedAuthority implements GrantedAuthority {
+
+}
+```
+
+> **Authority And Role**
+
+![This is an image](src/main/resources/assests/images/13-authorityAndRole.png)
+
+- The names of the authorities/roles are arbitrary in nature and these names can be customized as per the business
+  requirement
+
+
+- Roles are also represented using the same contract GrantedAuthority in Spring Security.
+
+
+- When defining a role, its name should start with the ROLE_ prefix. This prefix specifies the difference between a role
+  and an authority.
+
+In Spring Security the roles of the user can be configured and validated using the following ways,
+
+- hasRole(): Accepts a single role name for which the endpoint will be configured and user will be validated against the
+  single role mentioned. Only users having the same role configured can call the endpoint.
+
+
+- hasAnyRole(): Accepts multiple roles for which the endpoint will be configured and user will be validated against the
+  roles mentioned. Only users having any of the role configured can call the endpoint.
+
+
+- access(): Using Spring Expression Language (SpEL) it provides you unlimited possibilities for configuring roles which
+  are not possible with the above methods. We can use operators like OR, AND inside access() method.
+
+Note :
+
+ROLE_ prefix only to be used while configuring the role in DB. But when we configure the roles, we do it only by its
+name.
+
+- access() method can be used not only for configuring authorization based on authority or role but also with any
+  special requirements that we have. For example we can configure access based on the country of the user or current
+  time/date
+
+> **MATCHERS METHODS**
+
+
+Spring Security offers three types of matchers methods to configure endpoints security,
+
+1. MVC matchers
+2. Ant matchers
+3. Regex matchers
+
+### MVC matchers
+
+MvcMatcher() uses Spring MVC's HandlerMappingIntrospector to match the path and extract variables.
+
+- mvcMatchers(HttpMethod method, String... patterns): We can specify both the HTTP method and path pattern to configure
+  restrictions
+
+```java
+http.authorizeRequests().mvcMatchers(HttpMethod.POST,"/example").authenticated()
+        .mvcMatchers(HttpMethod.GET,"/example").permitAll()
+        .anyRequest().denyAll();
+```
+
+- mvcMatchers(String... patterns): We can specify only path pattern to configure restrictions and all the HTTP methods
+  will be allowed
+
+```java
+http.authorizeRequests().mvcMatchers("/profile/edit/**").authenticated()
+        .anyRequest().permitAll();
+```
+
+Note :
+
+- ** indicates any number of paths. For example, /x/**/z will match both /x/y/z and /x/y/abc/z
+- Single * indicates single path. For example /x/*/z will match /x/y/z, /x/abc/z but not /x/y/abc/z
+
+### ANT matchers
+
+ANT matchers is an implementation for Ant-style path patterns. Part of this mapping code has been kindly borrowed from
+Apache Ant.
+
+- antMatchers(HttpMethod method, String... patterns): We can specify both the HTTP method and path pattern to configure
+  restrictions.
+
+```java
+http.authorizeRequests().antMatchers(HttpMethod.POST,"/example").authenticated()
+        .antMatchers(HttpMethod.GET,"/example").permitAll()
+        .anyRequest().denyAll();
+```
+
+- antMatchers(String... patterns): We can specify only path pattern to configure restrictions and all the HTTP methods
+  will be allowed.
+
+```java
+http.authorizeRequests().antMatchers("/profile/edit/**").authenticated()
+        .anyRequest().permitAll();
+```
+
+- antMatchers(HttpMethod method): We can specify only HTTP method ignoring path pattern to configure restrictions. This
+  is same as antMatchers(httpMethod, “/**”)
+
+```java
+http.authorizeRequests().antMatchers(HttpMethod.POST).authenticated()
+        .anyRequest().permitAll();
+```
+
+Note : Generally mvcMatcheris more secure than an antMatcher.
+
+As an example:
+
+- antMatchers("/secured") matches only the exact /secured URL
+- mvcMatchers("/secured") matches /secured as well as /secured/, /secured.html, /secured.xyz
+
+### REGEX matchers
+
+Regexes can be used to represent any format of a string, so they offer unlimited possibilities for this matter
+
+- regexMatchers(HttpMethod method, String regex): We can specify both the HTTP method and path regex to configure
+  restrictions
+
+```java
+http.authorizeRequests().regexMatchers(HttpMethod.GET,".*/(en|es|zh) ").authenticated()
+        .anyRequest().denyAll();
+```
+
+- regexMatchers(String regex): We can specify only path regex to configure restrictions and all the HTTP methods will be
+  allowed.
+
+```java
+http.authorizeRequests().regexMatchers(".*/(en|es|zh) ").authenticated()
+        .anyRequest().denyAll();
+```

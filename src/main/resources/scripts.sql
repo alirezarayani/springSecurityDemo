@@ -1,6 +1,7 @@
 -- create database myApp;
 
-use myApp;
+use
+    myApp;
 
 CREATE TABLE users
 (
@@ -11,18 +12,7 @@ CREATE TABLE users
     PRIMARY KEY (id)
 );
 
-CREATE TABLE authorities
-(
-    id        int         NOT NULL identity (1,1),
-    username  varchar(45) NOT NULL,
-    authority varchar(45) NOT NULL,
-    PRIMARY KEY (id)
-);
 
-INSERT INTO users
-VALUES ('happy', '12345', '1');
-INSERT INTO authorities
-VALUES ('happy', 'write');
 
 -- CREATE TABLE customer
 -- (
@@ -56,6 +46,7 @@ INSERT INTO customer (name, email, mobile_number, pwd, role, create_dt)
 VALUES ('Happy', 'happy@example.com', '9876548337', '$2y$12$oRRbkNfwuR8ug4MlzH5FOeui.//1mkd.RsOAJMbykTSupVy.x/vb2',
         'admin', GETDATE());
 
+
 CREATE TABLE accounts
 (
     customer_id    int          NOT NULL,
@@ -75,7 +66,7 @@ CREATE TABLE account_transactions
     transaction_id      varchar(200) NOT NULL,
     account_number      int          NOT NULL,
     customer_id         int          NOT NULL,
-    transaction_dt      DATETIME         NOT NULL,
+    transaction_dt      DATETIME     NOT NULL,
     transaction_summary varchar(200) NOT NULL,
     transaction_type    varchar(100) NOT NULL,
     transaction_amt     int          NOT NULL,
@@ -87,38 +78,45 @@ CREATE TABLE account_transactions
 );
 
 
-DECLARE @UNI varchar(200);
-SET @UNI = NEWID();
+DECLARE
+    @UNI varchar(200);
+SET
+    @UNI = NEWID();
 INSERT INTO account_transactions (transaction_id, account_number, customer_id, transaction_dt,
                                   transaction_summary, transaction_type, transaction_amt,
                                   closing_balance, create_dt)
-VALUES (3243434 , 18657654, 1, GETDATE()- 7, 'Coffee Shop', 'Withdrawal', 30, 34500, GETDATE() - 7);
+VALUES (3243434, 18657654, 1, GETDATE() - 7, 'Coffee Shop', 'Withdrawal', 30, 34500, GETDATE() - 7);
 
-SET @UNI = NEWID();
+SET
+    @UNI = NEWID();
 INSERT INTO account_transactions (transaction_id, account_number, customer_id, transaction_dt,
                                   transaction_summary, transaction_type, transaction_amt,
                                   closing_balance, create_dt)
-VALUES (@UNI , 18657654, 1, GETDATE() - 6, 'Uber', 'Withdrawal', 100, 34400, GETDATE() - 6);
-SET @UNI = NEWID();
+VALUES (@UNI, 18657654, 1, GETDATE() - 6, 'Uber', 'Withdrawal', 100, 34400, GETDATE() - 6);
+SET
+    @UNI = NEWID();
 INSERT INTO account_transactions (transaction_id, account_number, customer_id, transaction_dt,
                                   transaction_summary, transaction_type, transaction_amt,
                                   closing_balance, create_dt)
-VALUES (@UNI , 18657654, 1, GETDATE() - 5, 'Self Deposit', 'Deposit', 500, 34900, GETDATE() - 5);
-SET @UNI = NEWID();
+VALUES (@UNI, 18657654, 1, GETDATE() - 5, 'Self Deposit', 'Deposit', 500, 34900, GETDATE() - 5);
+SET
+    @UNI = NEWID();
 INSERT INTO account_transactions (transaction_id, account_number, customer_id, transaction_dt,
                                   transaction_summary, transaction_type, transaction_amt,
                                   closing_balance, create_dt)
-VALUES (@UNI , 18657654, 1, GETDATE() - 4, 'Ebay', 'Withdrawal', 600, 34300, GETDATE() - 4);
-SET @UNI = NEWID();
+VALUES (@UNI, 18657654, 1, GETDATE() - 4, 'Ebay', 'Withdrawal', 600, 34300, GETDATE() - 4);
+SET
+    @UNI = NEWID();
 INSERT INTO account_transactions (transaction_id, account_number, customer_id, transaction_dt,
                                   transaction_summary, transaction_type, transaction_amt,
                                   closing_balance, create_dt)
-VALUES (@UNI , 18657654, 1, GETDATE() - 2, 'OnlineTransfer', 'Deposit', 700, 35000, GETDATE() - 2);
-SET @UNI = NEWID();
+VALUES (@UNI, 18657654, 1, GETDATE() - 2, 'OnlineTransfer', 'Deposit', 700, 35000, GETDATE() - 2);
+SET
+    @UNI = NEWID();
 INSERT INTO account_transactions (transaction_id, account_number, customer_id, transaction_dt,
                                   transaction_summary, transaction_type, transaction_amt,
                                   closing_balance, create_dt)
-VALUES (@UNI , 18657654, 1, GETDATE() - 1, 'Amazon.com', 'Withdrawal', 100, 34900, GETDATE() - 1);
+VALUES (@UNI, 18657654, 1, GETDATE() - 1, 'Amazon.com', 'Withdrawal', 100, 34900, GETDATE() - 1);
 
 
 CREATE TABLE loans
@@ -131,8 +129,9 @@ CREATE TABLE loans
     amount_paid        int          NOT NULL,
     outstanding_amount int          NOT NULL,
     create_dt          date DEFAULT NULL,
-    PRIMARY KEY (loan_number),  CONSTRAINT loan_customer_ibfk_1 FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE
-    );
+    PRIMARY KEY (loan_number),
+    CONSTRAINT loan_customer_ibfk_1 FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE
+);
 
 INSERT INTO loans (customer_id, start_dt, loan_type, total_loan, amount_paid,
                    outstanding_amount, create_dt)
@@ -162,7 +161,7 @@ CREATE TABLE cards
     create_dt        date DEFAULT NULL,
     PRIMARY KEY (card_id),
     CONSTRAINT card_customer_ibfk_1 FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE
-    );
+);
 
 INSERT INTO cards (card_number, customer_id, card_type, total_limit, amount_used,
                    available_amount, create_dt)
@@ -234,3 +233,23 @@ CREATE TABLE contact_messages
     create_dt     date DEFAULT NULL,
     PRIMARY KEY (contact_id)
 );
+CREATE TABLE authorities
+(
+    id          int         NOT NULL identity (1,1),
+    customer_id int         NOT NULL,
+    name        varchar(50) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT authorities_ibfk_1 FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+);
+
+-- INSERT INTO authorities (customer_id, name)
+-- VALUES (1, 'READ');
+--
+-- INSERT INTO authorities(customer_id, name)
+-- VALUES (1, 'WRITE');
+update authorities
+set name = 'ROLE_USER'
+where id = 1;
+update authorities
+set name = 'ROLE_ADMIN'
+where id = 2;

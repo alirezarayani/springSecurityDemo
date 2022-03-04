@@ -40,21 +40,21 @@ public class ProjectSecurityConfig extends WebSecurityConfigurerAdapter {
         /**
          *  Custom configuration as per our requirement
          * */
-        http.cors().configurationSource(new CorsConfigurationSource() {
-                    @Override
-                    public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-                        CorsConfiguration config = new CorsConfiguration();
-                        config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-                        config.setAllowedMethods(Collections.singletonList("*"));
-                        config.setAllowCredentials(true);
-                        config.setAllowedHeaders(Collections.singletonList("*"));
-                        config.setMaxAge(3600L);
-                        return config;
-                    }
-                }).and().csrf().ignoringAntMatchers("/contact").csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().authorizeRequests()
-                .antMatchers("/myAccount").authenticated()
-                .antMatchers("/myBalance").authenticated()
-                .antMatchers("/myLoans").authenticated()
+        http.cors().configurationSource(request -> {
+            CorsConfiguration config = new CorsConfiguration();
+            config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+            config.setAllowedMethods(Collections.singletonList("*"));
+            config.setAllowCredentials(true);
+            config.setAllowedHeaders(Collections.singletonList("*"));
+            config.setMaxAge(3600L);
+            return config;
+        }).and().csrf().ignoringAntMatchers("/contact").csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().authorizeRequests()
+//                .antMatchers("/myAccount").hasAuthority("WRITE")
+                .antMatchers("/myAccount").hasRole("USER")
+//                .antMatchers("/myBalance").hasAuthority("READ")
+                .antMatchers("/myBalance").hasAnyRole("ADMIN","USER")
+//                .antMatchers("/myLoans").hasAuthority("DELETE")
+                .antMatchers("/myLoans").hasRole("ROOT")
                 .antMatchers("/myCards").authenticated()
                 .antMatchers("/notices").permitAll()
                 .antMatchers("/contact").permitAll()
