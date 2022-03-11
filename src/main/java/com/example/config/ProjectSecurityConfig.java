@@ -1,5 +1,8 @@
 package com.example.config;
 
+import com.example.filter.AuthoritiesLoggingAfterFilter;
+import com.example.filter.AuthoritiesLoggingAtFilter;
+import com.example.filter.RequestValidationBeforeFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,15 +11,13 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 
-@EnableWebSecurity
+@EnableWebSecurity(debug = true)
 @Configuration
 public class ProjectSecurityConfig extends WebSecurityConfigurerAdapter {
     /**
@@ -41,18 +42,22 @@ public class ProjectSecurityConfig extends WebSecurityConfigurerAdapter {
          *  Custom configuration as per our requirement
          * */
         http.cors().configurationSource(request -> {
-            CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-            config.setAllowedMethods(Collections.singletonList("*"));
-            config.setAllowCredentials(true);
-            config.setAllowedHeaders(Collections.singletonList("*"));
-            config.setMaxAge(3600L);
-            return config;
-        }).and().csrf().ignoringAntMatchers("/contact").csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and().authorizeRequests()
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                    config.setAllowedMethods(Collections.singletonList("*"));
+                    config.setAllowCredentials(true);
+                    config.setAllowedHeaders(Collections.singletonList("*"));
+                    config.setMaxAge(3600L);
+                    return config;
+                }).and().csrf().ignoringAntMatchers("/contact").csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
+                .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
+                .addFilterAfter(new AuthoritiesLoggingAfterFilter(), BasicAuthenticationFilter.class)
+                .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
+                .authorizeRequests()
 //                .antMatchers("/myAccount").hasAuthority("WRITE")
                 .antMatchers("/myAccount").hasRole("USER")
 //                .antMatchers("/myBalance").hasAuthority("READ")
-                .antMatchers("/myBalance").hasAnyRole("ADMIN","USER")
+                .antMatchers("/myBalance").hasAnyRole("ADMIN", "USER")
 //                .antMatchers("/myLoans").hasAuthority("DELETE")
                 .antMatchers("/myLoans").hasRole("ROOT")
                 .antMatchers("/myCards").authenticated()
@@ -62,7 +67,6 @@ public class ProjectSecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin()
                 .and()
                 .httpBasic();
-
         /**
          * Configuration to deny all the requests
          * */

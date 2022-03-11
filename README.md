@@ -5,10 +5,6 @@ Security is for protecting your data and business logic inside your web applicat
 Security is very important similar to scalability, performance and availability. No client will specifically ask that
 need security.
 
-> **What is security?**
-
-Security is for protecting your data and business logic inside your web application.
-
 > **Enable Spring Security**
 
 1) Add Dependency
@@ -299,7 +295,7 @@ It loads User by username And the return type of our UserDetails interface.
 
 In order to provide our own user service, we will need to implement the UserDetailsService interface.
 
-It sends only username because in DBS can check the query logs and see what queries have been sent . Pulling the user
+It sends only username because in DBs can check the query logs and see what queries have been sent . Pulling the user
 details based upon username,either from a database or from memory location, or LDAP server
 
 So once we had those user details available, spring security can be saying by having the password that is received from
@@ -1075,3 +1071,93 @@ http.authorizeRequests().regexMatchers(HttpMethod.GET,".*/(en|es|zh) ").authenti
 http.authorizeRequests().regexMatchers(".*/(en|es|zh) ").authenticated()
         .anyRequest().denyAll();
 ```
+> **Filters In Spring Security**
+
+- Lot of times we will have situations where we need to perform some house keeping activities during the authentication
+  and authorization flow. Few such examples are,
+
+    - Input validation
+    - Tracing, Auditing and reporting
+    - Logging of input like IP Address etc.
+    - Encryption and Decryption
+    - Multi factor authentication using OTP
+
+
+- All such requirements can be handled using HTTP Filters inside Spring Security. Filters are servlet concepts which are
+  leveraged in Spring Security as well.
+
+
+- We already saw some in built filters of Spring security framework like Authentication filter, Authorization filter,
+  CSRF filter, CORS filter in the previous sections.
+
+
+- A filter is a component which receives requests, process its logic and handover to the next filter in the chain.
+
+
+- Spring Security is based on a chain of servlet filters. Each filter has a specific responsibility and depending on the
+  configuration, filters are added or removed. We can add our custom filters as well based on the need.
+
+
+- We can always check the registered filters inside Spring Security with the below configurations,
+    1. `@EnableWebSecurity(debug = true)`: We need to enable the debugging of the security details
+    2. Enable logging of the details by adding the below property in application.properties
+       `logging.level.org.springframework.security.web.FilterChainProxy=DEBUG`
+
+
+- Below are the some of the internal filters of Spring Security that gets executed in the authentication flow,
+
+![This is an image](src/main/resources/assests/images/14-Filter.png)
+
+> **Implementing Filters**
+
+- We can create our own filters by implementing the Filter interface from the javax.servlet package. Post that we need
+  to override the doFilter() method to have our own custom logic. This method receives as parameters the ServletRequest,
+  ServletResponse and FilterChain
+
+    - ServletRequest:It represents the HTTP request. We use the ServletRequest object to retrieve details about the
+      request from the client.
+
+    - ServletResponse:It represents the HTTP response. We use the ServletResponse object to modify the response before
+      sending it back to the client or further along the filter chain.
+
+    - FilterChain:The filter chain represents a collection of filters with a defined order in which they act. We use the
+      FilterChain object to forward the request to the next filter in the chain.
+
+
+- You can add a new filter to the spring security chain either before, after, or at the position of a known one. Each
+  position of the filter is an index (a number), and you might find it also referred to as “the order.”
+
+
+- Below are the methods available to configure a custom filter in the spring security flow,
+
+    - addFilterBefore(filter, class): adds a filter before the position of the specified filter class
+    - addFilterAfter(filter, class): adds a filter after the position of the specified filter class
+    - addFilterAt(filter, class): adds a filter at the location of the specified filter class
+
+> **ADD FILTER BEFORE**
+
+addFilterBefore(filter, class) : It will add a filter before the position of the specified filter class.
+
+![This is an image](src/main/resources/assests/images/15-Filter.png)
+-
+Here we add a filter just before authentication to write our own custom validation where the input email provided should
+not have the string ‘test’ inside
+
+> **ADD FILTER AFTER**
+
+addFilterAfter(filter, class) : It will add a filter after the position of the specified filter class.
+
+![This is an image](src/main/resources/assests/images/16-Filter.png)
+
+Here we add a filter just after authentication to write a logger about successful authentication and authorities details
+of the logged-in users.
+
+> **ADD FILTER AFTER**
+
+addFilterAt(filter, class): Adds a filter at the location of the specified filter class. But the order of the execution
+can’t be guaranteed. This will not replace the filters already present at the same order. Since we will not have control
+on the order of the filters and it is random in nature we should avoid providing the filters at same order
+
+![This is an image](src/main/resources/assests/images/17-Filter.png)
+
+![This is an image](src/main/resources/assests/images/18-Filter.png)
